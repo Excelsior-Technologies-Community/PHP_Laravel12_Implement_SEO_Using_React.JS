@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useCompare } from "../../context/CompareContext";
 
 export default function ProductShow() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [product, setProduct] = useState(null);
+    const { isInCompare, addToCompare, compareCount } = useCompare();
 
     useEffect(() => {
         axios.get(`/products/${id}/edit`).then(res => {
@@ -18,10 +21,6 @@ export default function ProductShow() {
 
     return (
         <div className="container mt-5">
-            <Link to="/shop" className="btn btn-secondary mb-3">
-                ← Back to Products
-            </Link>
-
             <div className="row">
                 <div className="col-md-6">
                     <img
@@ -48,6 +47,24 @@ export default function ProductShow() {
                             <strong>Color:</strong> {product.color}
                         </li>
                     </ul>
+
+                    <div className="d-flex gap-2 mt-3">
+                        <button
+                            onClick={() => addToCompare(product)}
+                            className={`btn ${isInCompare(product.id) ? "btn-success" : "btn-outline-primary"}`}
+                            disabled={compareCount >= 4}
+                        >
+                            {isInCompare(product.id) ? "Added" : "Add to Compare"}
+                        </button>
+                        <Link to="/shop" className="btn btn-secondary">
+                            Back to Products
+                        </Link>
+                        {compareCount > 0 && (
+                            <Link to="/compare" className="btn btn-outline-info">
+                                Compare ({compareCount})
+                            </Link>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

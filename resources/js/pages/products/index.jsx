@@ -4,20 +4,44 @@ import { Link } from "react-router-dom";
 
 export default function Index() {
     const [products, setProducts] = useState([]);
+    const [meta, setMeta] = useState(null);
 
     useEffect(() => {
         fetchProducts();
     }, []);
 
-    const fetchProducts = async () => {
-        const res = await axios.get("/products");
-        setProducts(res.data);
+    const fetchProducts = async (page = 1) => {
+        const res = await axios.get("/products?page=" + page + "&per_page=10");
+        const data = res.data;
+        setProducts(data.data || []);
+        setMeta(data.current_page ? {
+            current_page: data.current_page,
+            last_page: data.last_page,
+            total: data.total,
+        } : null);
     };
 
     const deleteProduct = async (id) => {
         if (!confirm("Are you sure?")) return;
-        await axios.delete(`/products/${id}`);
+        await axios.delete("/products/" + id);
         fetchProducts();
+    };
+
+    const renderPageNumbers = () => {
+        if (!meta) return null;
+        const pages = [];
+        const start = Math.max(1, meta.current_page - 2);
+        const end = Math.min(meta.last_page, meta.current_page + 2);
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+        return pages.map(page => (
+            <li key={page} className={`page-item ${page === meta.current_page ? "active" : ""}`}>
+                <button className="page-link" onClick={() => fetchProducts(page)}>
+                    {page}
+                </button>
+            </li>
+        ));
     };
 
     return (
@@ -55,19 +79,19 @@ export default function Index() {
                                     <tr key={p.id}>
                                         <td>
                                             <img
-                                                src={`/images/${p.image}`}
+                                                src={"/images/" + p.image}
                                                 width="60"
                                                 className="rounded"
                                             />
                                         </td>
                                         <td>{p.name}</td>
-                                        <td>₹ {p.price}</td>
+                                        <td>Rs. {p.price}</td>
                                         <td>{p.size}</td>
                                         <td>{p.color}</td>
                                         <td>{p.category}</td>
                                         <td>
                                             <Link
-                                                to={`/edit/${p.id}`}
+                                                to={"/edit/" + p.id}
                                                 className="btn btn-sm btn-primary me-2"
                                             >
                                                 Edit
@@ -85,6 +109,26 @@ export default function Index() {
                         </tbody>
                     </table>
                 </div>
+
+                {meta && (
+                    <div className="card-footer">
+                        <nav>
+                            <ul className="pagination justify-content-center mb-0">
+                                <li className={`page-item ${meta.current_page === 1 ? "disabled" : ""}`}>
+                                    <button className="page-link" onClick={() => fetchProducts(meta.current_page - 1)}>
+                                        Previous
+                                    </button>
+                                </li>
+                                {renderPageNumbers()}
+                                <li className={`page-item ${meta.current_page === meta.last_page ? "disabled" : ""}`}>
+                                    <button className="page-link" onClick={() => fetchProducts(meta.current_page + 1)}>
+                                        Next
+                                    </button>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                )}
             </div>
         </div>
     );
