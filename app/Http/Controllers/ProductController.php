@@ -7,13 +7,58 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    // 🔹 Get all products
-    public function index()
+    // 🔹 Get all products (with search, filter, sort, pagination)
+    public function index(Request $request)
     {
-        return response()->json(
-            Product::latest()->get(),
-            200
-        );
+        $perPage   = $request->query('per_page', 9);
+        $sortBy    = $request->query('sort_by', 'created_at');
+        $sortDir   = $request->query('sort_dir', 'desc');
+
+        $query = Product::query();
+
+        // 🔹 Search
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('details', 'like', "%{$search}%")
+                  ->orWhere('category', 'like', "%{$search}%");
+            });
+        }
+
+        // 🔹 Filter by category
+        if ($category = $request->query('category')) {
+            $query->where('category', $category);
+        }
+
+        // 🔹 Filter by color
+        if ($color = $request->query('color')) {
+            $query->where('color', $color);
+        }
+
+        // 🔹 Filter by size
+        if ($size = $request->query('size')) {
+            $query->where('size', $size);
+        }
+
+        // 🔹 Filter by price range
+        if ($minPrice = $request->query('min_price')) {
+            $query->where('price', '>=', $minPrice);
+        }
+        if ($maxPrice = $request->query('max_price')) {
+            $query->where('price', '<=', $maxPrice);
+        }
+
+        // 🔹 Sort
+        if (!in_array($sortBy, ['price', 'name', 'created_at', 'updated_at'])) {
+            $sortBy = 'created_at';
+        }
+        $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sortBy, $sortDir);
+
+        // 🔹 Paginate
+        $products = $query->paginate($perPage);
+
+        return response()->json($products, 200);
     }
 
     // 🔹 Store product
@@ -84,6 +129,26 @@ class ProductController extends Controller
         return response()->json([
             'message' => 'Product created successfully'
         ], 201);
+    }
+
+    // 🔹 Get specific products for comparison
+    public function compare(Request $request)
+    {
+        $ids = $request->query('ids');
+
+        if (!$ids) {
+            return response()->json(['data' => [], 'message' => 'No product IDs provided'], 200);
+        }
+
+        $idsArray = array_filter(explode(',', $ids));
+
+        if (count($idsArray) < 2) {
+            return response()->json(['data' => [], 'message' => 'Select at least 2 products to compare'], 400);
+        }
+
+        $products = Product::whereIn('id', $idsArray)->get();
+
+        return response()->json($products, 200);
     }
 
     // 🔹 Edit product
