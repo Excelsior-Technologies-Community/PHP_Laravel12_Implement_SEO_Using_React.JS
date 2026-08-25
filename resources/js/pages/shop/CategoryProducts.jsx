@@ -16,12 +16,13 @@ export default function CategoryProducts() {
     const { compareCount } = useCompare();
 
     const fetchProducts = async (page = 1) => {
-        const params = new URLSearchParams({
-            category,
-            page,
-            sort_by: sort.sort_by,
-            sort_dir: sort.sort_dir,
-        });
+const params = new URLSearchParams({
+    category,
+    page,
+    sort_by: sort.sort_by,
+    sort_dir: sort.sort_dir,
+    customer: "1",
+});
         if (search) params.set("search", search);
 
         const res = await axios.get("/products?" + params.toString());

@@ -18,11 +18,12 @@ export default function Home() {
     const { compareCount } = useCompare();
 
     const fetchProducts = async (page = 1) => {
-        const params = new URLSearchParams({
-            page,
-            sort_by: sort.sort_by,
-            sort_dir: sort.sort_dir,
-        });
+const params = new URLSearchParams({
+    page,
+    sort_by: sort.sort_by,
+    sort_dir: sort.sort_dir,
+    customer: "1",
+});
         if (search) params.set("search", search);
         Object.entries(filters).forEach(([key, value]) => {
             if (value) params.set(key, value);
